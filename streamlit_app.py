@@ -1,76 +1,89 @@
 import streamlit as st
 import pandas as pd
-import requests
-import io
 
-# Load Excel data from GitHub using raw link
+# Load Excel data (adjust the path accordingly)
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/Kirtimulay0417/tata_aig_calculator/main/Tata%20Aig%20Premium_Data.xlsx"
-    response = requests.get(url)
-    data = pd.read_excel(io.BytesIO(response.content), sheet_name='Premium_TATA')
+    data = pd.read_excel(r'Tata Aig Premium_Data.xlsx', sheet_name='Premium_TATA')
     return data
 
-def calculate_premium(age, deductible, sum_insured, term, global_cover):
+# Function to calculate premium for each family member
+def calculate_premium(age, deductible, sum_insured, term, pincode):
     data = load_data()
+    
+    # Get the base premium for the given age
+    premium_row = data[data['Age Band'] == age]
+    
+    if premium_row.empty:
+        return "Age not found in the data."
+    
+    base_premium = premium_row['Premium'].values[0]
+    
+    # Apply discounts and add-ons
+    discount = 0.1  # Example discount logic (10% for this term)
+    family_discount = 0.05  # Example family discount (5%)
+    term_discount = base_premium * discount
+    
+    # Family size discount (add logic for family members)
+    family_discount_value = base_premium * family_discount
+    
+    # Sum insured adjustments (example logic)
+    sum_adjustment = (sum_insured - 500000) * 0.02  # Example adjustment logic for sum insured
 
-    # Filter by user inputs
-    filtered = data[
-        (data['Age Band'] == age) &
-        (data['Deductible'] == deductible) &
-        (data['Sum Insured'] == sum_insured)
-    ]
-
-    if filtered.empty:
-        return "No matching data found. Please check your inputs.", None
-
-    base_premium = filtered['Premium'].values[0]
-
-    # Apply discounts/add-ons
-    discount = 0.1 if term == 2 else 0.15 if term == 3 else 0
-    premium_after_term = base_premium * (1 - discount)
-
-    global_cover_addon = 0.15 * base_premium if global_cover else 0
-    final_premium = premium_after_term + global_cover_addon
-
-    gst = final_premium * 0.18
-    total = final_premium + gst
-
+    gst = 0.18  # 18% GST
+    premium_with_gst = base_premium + term_discount + family_discount_value + sum_adjustment
+    total_premium = premium_with_gst * (1 + gst)
+    
+    # Return the premium breakdown for this member
     breakdown = {
         "Base Premium": base_premium,
-        f"Term Discount ({term} year)": -base_premium * discount,
-        "Global Cover Add-On": global_cover_addon,
-        "Premium Before GST": final_premium,
-        "GST (18%)": gst,
-        "Total Premium": total
+        "Term Discount": term_discount,
+        "Family Discount": family_discount_value,
+        "Sum Insured Adjustment": sum_adjustment,
+        "GST": total_premium - premium_with_gst,
+        "Total Premium": total_premium,
+        "Pincode": pincode  # Just showing pincode in the breakdown for reference
     }
 
-    return None, breakdown
+    return breakdown
 
+# Function to run the calculator
 def run_calculator():
-    st.title("TATA AIG Super Top-Up Premium Calculator")
+    # Input Fields
+    st.title("Tata AIG Premium Calculator")
+    
+    # Family Size input (1 to 6 members)
+    family_size = st.slider("Select Family Size (Number of Members)", 1, 6, 1)
+    
+    pincode = st.text_input("Enter Pincode (for reference only):")
+    
+    # Loop to input age, deductible, sum insured for each family member
+    family_premiums = []
+    for i in range(family_size):
+        st.subheader(f"Member {i+1}")
+        
+        age = st.number_input(f"Enter Age for Member {i+1}", min_value=0, max_value=100, step=1)
+        deductible = st.number_input(f"Enter Deductible Amount for Member {i+1}", min_value=0, step=5000)
+        sum_insured = st.number_input(f"Enter Sum Insured for Member {i+1}", min_value=100000, step=50000)
+        term = st.selectbox(f"Select Policy Term (in years) for Member {i+1}", [1, 2, 3, 5])
+        
+        # Calculate premium for this member
+        premium_breakdown = calculate_premium(age, deductible, sum_insured, term, pincode)
+        
+        # Store family member's premium breakdown
+        family_premiums.append(premium_breakdown)
 
-    age = st.selectbox("Select Age Band", options=[
-        '18-35', '36-45', '46-50', '51-55', '56-60', '61-65', '66-70', '71-75'
-    ])
-    deductible = st.selectbox("Select Deductible", options=[
-        300000, 500000, 1000000
-    ])
-    sum_insured = st.selectbox("Select Sum Insured", options=[
-        500000, 1000000, 2000000
-    ])
-    term = st.selectbox("Policy Term (Years)", options=[1, 2, 3])
-    global_cover = st.checkbox("Add Global Cover?")
-
-    if st.button("Calculate Premium"):
-        error, result = calculate_premium(age, deductible, sum_insured, term, global_cover)
-
-        if error:
-            st.error(error)
-        else:
-            st.success("Premium Breakdown")
-            for label, amount in result.items():
-                st.write(f"**{label}:** ₹{amount:,.2f}")
+    # Display family premiums breakdown
+    st.write("### Premium Breakdown for Family")
+    for i, breakdown in enumerate(family_premiums):
+        st.write(f"#### Member {i+1} Premium Breakdown")
+        st.write(f"Base Premium: ₹{breakdown['Base Premium']}")
+        st.write(f"Term Discount: ₹{breakdown['Term Discount']}")
+        st.write(f"Family Discount: ₹{breakdown['Family Discount']}")
+        st.write(f"Sum Insured Adjustment: ₹{breakdown['Sum Insured Adjustment']}")
+        st.write(f"GST: ₹{breakdown['GST']}")
+        st.write(f"Total Premium: ₹{breakdown['Total Premium']}")
+        st.write(f"Pincode: {breakdown['Pincode']}")  # Display pincode for reference
 
 if __name__ == "__main__":
     run_calculator()
