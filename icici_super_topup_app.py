@@ -47,6 +47,7 @@ def run_icici_calculator():
     df = load_data()
 
     # User Inputs
+   family_size = st.number_input("Family Size (Number of members)", min_value=1, max_value=10, step=1)
     age_input = st.text_input("Enter Ages (comma-separated)", "25,30")
     deductible = st.number_input("Enter Deductible Amount", min_value=0, step=10000)
     sum_insured = st.number_input("Enter Sum Insured", min_value=0, step=100000)
