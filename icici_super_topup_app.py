@@ -4,7 +4,7 @@ import pandas as pd
 # Load data from Excel
 @st.cache_data
 def load_data():
-    df = pd.read_excel("Premium_ICICI.xlsx", sheet_name="Premium_ICICI")
+    df = pd.read_excel(r"C:\Users\dell\OneDrive\Desktop\New folder (4)\Premium_ICICI.xlsx", sheet_name="Premium_ICICI")
     return df
 
 # Get Age Band
@@ -47,7 +47,7 @@ def run_icici_calculator():
     df = load_data()
 
     # User Inputs
-   family_size = st.number_input("Family Size (Number of members)", min_value=1, max_value=10, step=1)
+    family_size = st.number_input("Family Size (Number of members)", min_value=1, max_value=10, step=1)
     age_input = st.text_input("Enter Ages (comma-separated)", "25,30")
     deductible = st.number_input("Enter Deductible Amount", min_value=0, step=10000)
     sum_insured = st.number_input("Enter Sum Insured", min_value=0, step=100000)
@@ -89,4 +89,4 @@ def run_icici_calculator():
 
 # Run
 if __name__ == "__main__":
-    run_icici_calculator()
+    run_icici_calculator()  
