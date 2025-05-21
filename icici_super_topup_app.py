@@ -4,7 +4,15 @@ import pandas as pd
 # Load data from Excel
 @st.cache_data
 def load_data():
-    df = pd.read_exceldf = pd.read_excel("Premium_ICICI.xlsx", sheet_name="Premium_ICICI")
+    df = pd.read_excel(r"C:\Users\dell\OneDrive\Desktop\New folder (4)\Premium_ICICI.xlsx", sheet_name="Premium_ICICI")
+    
+    # Optional: remove leading/trailing spaces from column names
+    df.columns = df.columns.str.strip()
+
+    # Debug: print or display the actual column names
+    import streamlit as st
+    st.write("Excel Columns:", df.columns.tolist())
+
     return df
 
 # Get Age Band
